@@ -3,25 +3,37 @@ package com.bignerdranch.android.runtracker;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationManager;
+import android.util.Log;
 
 /**
  * Created by oliviadodge on 4/18/2015.
  */
 public class RunManager {
     private static final String TAG = "RunManager";
+    private static final String PREFS_FILE = "runs";
+    private static final String PREF_CURRENT_RUN_ID = "RunManager.currentRunId";
 
     public static final String ACTION_LOCATION = "com.bignerdranch.android.runtracker.ACTION_LOCATION";
+
+    private static final String TEST_PROVIDER = "TEST_PROVIDER";
 
     private static RunManager sRunManager;
     private Context mAppContext;
     private LocationManager mLocationManager;
+    private RunDatabaseHelper mHelper;
+    private SharedPreferences mPrefs;
+    private long mCurrentRunId;
 
     //the private constructor forces users to use RunManager.get(Context)
     private RunManager(Context appContext){
         mAppContext = appContext;
         mLocationManager = (LocationManager) mAppContext.getSystemService(Context.LOCATION_SERVICE);
+        mHelper = new RunDatabaseHelper(mAppContext);
+        mPrefs = mAppContext.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE);
+        mCurrentRunId = mPrefs.getLong(PREF_CURRENT_RUN_ID, -1);
     }
 
     public static RunManager get(Context c){
@@ -40,6 +52,11 @@ public class RunManager {
 
     public void startLocationUpdates() {
         String provider = LocationManager.GPS_PROVIDER;
+        if (mLocationManager.getProvider(TEST_PROVIDER) != null && mLocationManager.isProviderEnabled((TEST_PROVIDER))) {
+            provider = TEST_PROVIDER;
+        }
+
+        Log.d(TAG, "Using provider " + provider);
         //get the last known location and broadcast it if you have one
         Location lastKnown = mLocationManager.getLastKnownLocation(provider);
         if (lastKnown != null) {
@@ -59,6 +76,33 @@ public class RunManager {
         mAppContext.sendBroadcast(broadcast);
     }
 
+    public Run startNewRun(){
+        //insert a run into the db
+        Run run = insertRun();
+        //start traking the run
+        startTrackingRun(run);
+        return run;
+    }
+
+    public void startTrackingRun(Run run) {
+        //keep the ID
+        mCurrentRunId = run.getId();
+        //store it in shared preferences
+        mPrefs.edit().putLong(PREF_CURRENT_RUN_ID, mCurrentRunId).commit();
+        startLocationUpdates();
+    }
+
+    public void stopRun(){
+        stopLocationUpdates();
+        mCurrentRunId = -1;
+        mPrefs.edit().remove(PREF_CURRENT_RUN_ID).commit();
+    }
+
+    private Run insertRun(){
+        Run run = new Run();
+        run.setId(mHelper.insertRun(run));
+        return run;
+    }
     public void stopLocationUpdates(){
         PendingIntent pi = getLocationPendingIntent(false);
         if (pi != null) {
