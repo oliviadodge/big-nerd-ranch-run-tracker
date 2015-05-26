@@ -4,6 +4,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.location.Location;
 import android.location.LocationManager;
 import android.util.Log;
@@ -18,7 +19,7 @@ public class RunManager {
 
     public static final String ACTION_LOCATION = "com.bignerdranch.android.runtracker.ACTION_LOCATION";
 
-    private static final String TEST_PROVIDER = "TEST_PROVIDER";
+//    private static final String TEST_PROVIDER = "TEST_PROVIDER";
 
     private static RunManager sRunManager;
     private Context mAppContext;
@@ -52,12 +53,12 @@ public class RunManager {
 
     public void startLocationUpdates() {
         String provider = LocationManager.GPS_PROVIDER;
-        if (mLocationManager.getProvider(TEST_PROVIDER) != null && mLocationManager.isProviderEnabled((TEST_PROVIDER))) {
-            provider = TEST_PROVIDER;
-        }
-
-        Log.d(TAG, "Using provider " + provider);
-        //get the last known location and broadcast it if you have one
+//        if (mLocationManager.getProvider(TEST_PROVIDER) != null && mLocationManager.isProviderEnabled((TEST_PROVIDER))) {
+//            provider = TEST_PROVIDER;
+//        }
+//
+//        Log.d(TAG, "Using provider " + provider);
+//        //get the last known location and broadcast it if you have one
         Location lastKnown = mLocationManager.getLastKnownLocation(provider);
         if (lastKnown != null) {
             //reset the time to now
@@ -103,6 +104,14 @@ public class RunManager {
         run.setId(mHelper.insertRun(run));
         return run;
     }
+
+    public void insertLocation(Location location) {
+        if (mCurrentRunId != -1) {
+            mHelper.insertLocation(mCurrentRunId, location);
+        } else {
+            Log.e(TAG, "Location received with no tracking run; ignoring.");
+        }
+    }
     public void stopLocationUpdates(){
         PendingIntent pi = getLocationPendingIntent(false);
         if (pi != null) {
@@ -111,7 +120,40 @@ public class RunManager {
         }
     }
 
+    public Run getRun(long id) {
+        Run run = null;
+        RunDatabaseHelper.RunCursor cursor = mHelper.queryRun(id);
+        cursor.moveToFirst();
+        //if you get a row, get a run
+        if (!cursor.isAfterLast())
+            run = cursor.getRun();
+        cursor.close();
+        return run;
+    }
+
+    public Location getLastLocationForRun(long runId) {
+        Location location = null;
+        RunDatabaseHelper.LocationCursor cursor = mHelper.queryLastLocationForRun(runId);
+        cursor.moveToFirst();
+        //if you get a row, get a location
+        if (!cursor.isAfterLast())
+            location = cursor.getLocation();
+        cursor.close();
+        return location;
+    }
+
+    public RunDatabaseHelper.LocationCursor queryLocationsForRun(long runId) {
+        return mHelper.queryLocationsForRun(runId);
+    }
+
+    public boolean isTrackingRun(Run run) {
+        return run != null && run.getId() == mCurrentRunId;
+    }
     public boolean isTrackingRun(){
         return getLocationPendingIntent(false) != null;
+    }
+
+    public RunDatabaseHelper.RunCursor queryRuns() {
+        return mHelper.queryRuns();
     }
 }

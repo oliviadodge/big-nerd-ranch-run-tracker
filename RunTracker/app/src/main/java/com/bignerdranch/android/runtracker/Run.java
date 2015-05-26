@@ -40,5 +40,8 @@ public class Run {
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
-
+    @Override
+    public String toString() {
+        return ("id " + mId + "Start Date " + mStartDate);
+    }
 }
