@@ -16,6 +16,7 @@ import java.util.Date;
 public class RunDatabaseHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "runs.sqlite";
     private static final int VERSION = 1;
+    private static final int NEW_VERSION = 2;
 
     private static final String TABLE_RUN = "run";
     private static final String COLUMN_RUN_ID = "_id";
@@ -40,13 +41,12 @@ public class RunDatabaseHelper extends SQLiteOpenHelper {
         "_id integer primary key autoincrement, start_date integer)");
         //create the location table
         db.execSQL("create table location (" +
-                "timestamp integer, latitude real, longitude real, altitude real," +
-                "provider varchar(100), run_id integer references run(_id))");
+                "timestamp integer, latitude real, longitude real, altitude real, " +
+                "provider varchar(100), run_id integer, foreign key(run_id) references run(_id) on delete cascade)");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        //implement schema changes and data massage here when upgrading
     }
 
     public long insertRun(Run run) {
@@ -64,6 +64,12 @@ public class RunDatabaseHelper extends SQLiteOpenHelper {
         cv.put(COLUMN_LOCATION_PROVIDER, location.getProvider());
         cv.put(COLUMN_LOCATION_RUN_ID, runId);
         return getWritableDatabase().insert(TABLE_LOCATION, null, cv);
+    }
+
+    public boolean deleteRun(long runId) {
+        String whereClause = "_id = " + runId;
+        return (getWritableDatabase().delete(TABLE_RUN, whereClause, null) > 0);
+
     }
 
     public LocationCursor queryLastLocationForRun(long runId) {

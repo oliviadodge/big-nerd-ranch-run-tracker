@@ -47,6 +47,9 @@ public class RunFragment extends Fragment {
         protected void onLocationReceived(Context context, Location location) {
             if (!mRunManager.isTrackingRun(mRun))
                 return;
+            Log.d(TAG, this + "Got location from " + location.getProvider()
+                    + ":" + location.getLatitude() + ", " + location.getLongitude());
+
             mLastLocation = location;
             if (isVisible()) {
                 updateUI();
@@ -142,14 +145,18 @@ public class RunFragment extends Fragment {
 
         int durationSeconds = 0;
         if (mRun != null && mLastLocation != null) {
+            Log.i(TAG, "updateUI() called and mLastLocation.getTime() = " + mLastLocation.getTime());
             durationSeconds = mRun.getDurationSeconds(mLastLocation.getTime());
-            mDurationTextView.setText(durationSeconds);
+            mDurationTextView.setText(Integer.toString(durationSeconds));
             mLatitudeTextView.setText(Double.toString(mLastLocation.getLatitude()));
             mLongitudeTextView.setText(Double.toString(mLastLocation.getLongitude()));
             mAltitudeTextView.setText(Double.toString(mLastLocation.getAltitude()));
             mMapButton.setEnabled(true);
+
         } else {
             mMapButton.setEnabled(false);
+            Log.i(TAG, "updateUI() called and mLastLocation is " + mLastLocation);
+
         }
 
         mStartButton.setEnabled(!started);

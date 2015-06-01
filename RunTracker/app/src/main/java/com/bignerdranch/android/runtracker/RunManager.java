@@ -80,7 +80,7 @@ public class RunManager {
     public Run startNewRun(){
         //insert a run into the db
         Run run = insertRun();
-        //start traking the run
+        //start tracking the run
         startTrackingRun(run);
         return run;
     }
@@ -91,6 +91,10 @@ public class RunManager {
         //store it in shared preferences
         mPrefs.edit().putLong(PREF_CURRENT_RUN_ID, mCurrentRunId).commit();
         startLocationUpdates();
+    }
+
+    public boolean deleteRun(long runId) {
+        return mHelper.deleteRun(runId);
     }
 
     public void stopRun(){

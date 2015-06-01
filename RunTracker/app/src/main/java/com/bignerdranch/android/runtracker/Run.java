@@ -1,11 +1,14 @@
 package com.bignerdranch.android.runtracker;
 
+import android.util.Log;
+
 import java.util.Date;
 
 /**
  * Created by oliviadodge on 4/21/2015.
  */
 public class Run {
+    private static String TAG = "Run";
     private Date mStartDate;
     private long mId;
 
@@ -30,6 +33,7 @@ public class Run {
     }
 
     public int getDurationSeconds(long endMillis) {
+        Log.i(TAG, "Start time is " + mStartDate.getTime());
         return (int) ((endMillis - mStartDate.getTime())/1000);
     }
 
